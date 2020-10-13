@@ -1,6 +1,6 @@
 # SalesScraper
 
-##Program will provide tools to automate the sales process.
+## Program to provide tools to automate the sales process.
 
 1. Job posting scraper: Will allow to automatically search popular job sites for postings that contain any combination of:
 
