@@ -1,6 +1,10 @@
-from jobscapers import mosterscraper
+from jobscapers import monsterscraper
+from jobscapers import Indeedscraper
 
-monstertest = mosterscraper.MonsterScraper("developer", "Canada")
+search_term = "security"
+location = "Canada"
+monstertest = monsterscraper.MonsterScraper(search_term, location)
+indeedtest = Indeedscraper.IndeedScraper(search_term, location)
 
 
 def main():
@@ -8,6 +12,3 @@ def main():
 
     if __name__ == "__main__":
         print("Start Main")
-
-# test.setscaper()
-# test.filterbykeywords(a="Game", b="quality", c="assurance", d="c++", e="python")
