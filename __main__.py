@@ -1,6 +1,6 @@
 from jobscapers import mosterscraper
 
-test = mosterscraper.MonsterScraper("Canada", "cyber")
+monstertest = mosterscraper.MonsterScraper("developer", "Canada")
 
 
 def main():
@@ -9,6 +9,5 @@ def main():
     if __name__ == "__main__":
         print("Start Main")
 
-
-test.seturl()
-test.setscaper()
+# test.setscaper()
+# test.filterbykeywords(a="Game", b="quality", c="assurance", d="c++", e="python")
