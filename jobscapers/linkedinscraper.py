@@ -5,8 +5,6 @@ from time import sleep
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import random
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 
 driver = webdriver.Chrome(executable_path=r"C:\Users\taran\OneDrive\Desktop\chromedriver_win32\chromedriver.exe")
 driver.get('https://www.linkedin.com/')
@@ -21,48 +19,91 @@ sleep(random.uniform(0.5, 0.8))
 
 sign_in_button = driver.find_element_by_class_name('sign-in-form__submit-button')
 sign_in_button.click()
-sleep(random.uniform(1.5, 3.5))
+sleep(random.uniform(50, 80))
+
+companylist = []
+
+
+def companysearch():
+
+    num = 1
+    for x in range(0, 3):
+        num += 1
+        url = 'https://www.linkedin.com/search/results/companies/?keywords=computer%20games&origin=GLOBAL_SEARCH_HEADER' \
+              '&page=' + str(num)
+        driver.get(url)
+
+        sleep(random.uniform(1.5, 2))
+        site = driver.page_source
+        soup = BeautifulSoup(site, 'html.parser')
+        page = soup.find('ul', class_='reusable-search__entity-results-list list-style-none')
+        for a in page.find_all('a', href=True):
+            if a['href'] in companylist:
+                continue
+            elif 'job' in str(a['href']):
+                continue
+            companylist.append(str(a['href']))
+
+
 
 
 def scrapecompany():
-    writer = csv.writer(open('output.csv', 'w+', encoding='utf-8-sig', newline=''))
-    writer.writerow(['company', 'industry', 'employees', 'HQ', 'specialties', 'description'])
+    writer = csv.writer(open('../data/output/linkedincompany.csv', 'w+', encoding='utf-8-sig', newline=''))
+    writer.writerow(['company', 'industry','status','channel','where','progress','domain', 'based', 'employees',
+                     'job posting', 'HQ', 'description', 'specialties', 'Linkedin'])
 
-    driver.get("https://www.linkedin.com/company/optivainc/about/")
-    sleep(random.uniform(2, 3.5))
+    for url in companylist:
+        driver.get(url+'about/')
+        sleep(random.uniform(1.5, 2.5))
+        site = driver.page_source
 
-    sel = Selector(text=driver.page_source)
+        soup = BeautifulSoup(site, 'html.parser')
+        page = soup.findAll(attrs={"class": "org-page-details__definition-text t-14 t-black--light t-normal"})
 
-    company = sel.xpath(
-        '//*[@class = "org-top-card-summary__title t-24 t-black truncate"]/text()').extract
+        company = soup.find('h1', class_='org-top-card-summary__title t-24 t-black truncate')
+        employees = soup.find('span', class_='v-align-middle')
+        employees = employees.text.strip() if employees else None
+        overview = soup.find('p', class_='break-words white-space-pre-wrap mb5 t-14 t-black--light t-normal')
+        linkedin_url = url
+        if len(page) < 6:
+            continue
+        website = page[0]
+        industry = page[1]
+        hq = page[2]
+        specialties = page[5]
 
+        if None in (company, employees, overview, website, industry, hq, specialties):
+            continue
 
-    industry = sel.xpath(
-        '//*[@class = "org-page-details__definition-text t-14 t-black--light t-normal"]/text()').extract_first().split()
-    industry = ' '.join(industry)
+        stats = {
+            'company': company.text.strip(),
+            'employees': employees[8:21],
+            'industry': industry.text.strip(),
+            'hq': hq.text.strip(),
+            'url': website.text.strip(),
+            'overview': overview.text.strip(),
+            'specialties': specialties.text.strip()
+        }
 
-    employees = sel.xpath(
-        '//*[@class = "org-page-details__employees-on-linkedin-count t-14 t-black--light mb5"]/text()').extract_first()
+        writer.writerow([company.text.strip(),
+                         industry.text.strip(),
+                         None,
+                         None,
+                         None,
+                         None,
+                         website.text.strip(),
+                         None,
+                         employees[8:21],
+                         None,
+                         overview.text.strip(),
+                         hq.text.strip(),
+                         specialties.text.strip(),
+                         linkedin_url])
 
-    hq = ' '.join(sel.xpath('//*[@class = "org-page-details__definition-text t-14 t-black--light '
-                            't-normal"]/text()').extract_first().split())
-    specialties = sel.xpath('//*[@class = "org-page-details__definition-text t-14 t-black--light t-normal"]/text()').extract_first()
-
-    url = driver.current_url
-
-    print('\n')
-    print('Company: ', company)
-    print('Industry: ', industry)
-    print('Employees: ', employees)
-    print('HQ: ', hq)
-    print('Specialties:', specialties)
-    # print('Description:', description)
-    print('URL: ', url)
-    print('\n')
 
 
 def scrapeprofile():
-    writer = csv.writer(open('output.csv', 'w+', encoding='utf-8-sig', newline=''))
+    writer = csv.writer(open('../data/output/linkedinprofiles.csv', 'w+', encoding='utf-8-sig', newline=''))
     writer.writerow(['Name', 'Company', 'position', 'Location', 'URL'])
 
     driver.get('https://www.linkedin.com/in/robert-stabile-7a69b441/')
@@ -101,6 +142,10 @@ def scrapeprofile():
                      url])
 
 
-scrapecompany()
+testlst = ['https://www.linkedin.com/company/big-viking-games/about',
+           'https://www.linkedin.com/company/sledgehammer-games/about/',
+           'https://www.linkedin.com/company/turbulent/about/']
+
+scrapeprofile()
 
 driver.quit()

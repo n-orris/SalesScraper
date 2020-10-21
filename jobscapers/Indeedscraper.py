@@ -27,16 +27,14 @@ class IndeedScraper:
         page_num = page.find('div', class_='pagination')
         last_pages = page_num.text.strip()
         self.runs = int(last_pages[-2:])
+        return self.runs
 
     def setscraper(self):
-
+        num = 0
         # runs scraper for each page of results
-        for s in range(0, 5):
-            num = 0
-            if num == 0:
-                url = self.url
-            else:
-                url = self.url + "&start=" + str(num)
+        for s in range(0, self.runs):
+            num += 10
+            url = self.url + "&start=" + str(num)
 
             response = requests.get(url)
             page = BeautifulSoup(response.content, 'html.parser')
@@ -61,7 +59,6 @@ class IndeedScraper:
                     "summary": summary.text.strip()
                 }
                 self.posting_list.append(posting)
-            num += 10
 
     def filterbyfield(self, **filters):
         filteredlist = []
@@ -76,7 +73,6 @@ class IndeedScraper:
                 filteredlist.append(entry)
 
         self.outputlist = filteredlist
-        print(filteredlist)
         return filteredlist
 
     # filters by specific keywords in the posting
@@ -106,7 +102,7 @@ class IndeedScraper:
         with open(file, "w+", newline='') as csvfile:
 
             if self.fieldvalues is None:
-                writer = csv.DictWriter(csvfile, fieldnames=["title", "company", "location", "date","summary"])
+                writer = csv.DictWriter(csvfile, fieldnames=["title", "company", "location", "date", "summary"])
                 writer.writeheader()
 
                 for data in self.outputlist:
