@@ -13,87 +13,81 @@ class MonsterScraper:
     data = None
     outputlist = []
     fieldvalues = None
+    kwords = None
+    url_list = []
 
     def __init__(self, job_type, location):
         self.location = location
-        self.job_type = job_type
-        self.url = 'https://www.monster.ca/jobs/search/?q=' + self.job_type + '&where=' + self.location
+        self.kwords = job_type
+        self.url = None
         self.pages = None
-        self.runs = None
+        self.runs = []
 
     def seturl(self):
         # Enter web page url and specifics
+
+        self.url = 'https://www.monster.ca/jobs/search/?q=' + self.kwords + '&where=' + self.location
+
         result = requests.get(self.url)
         results_per_page = 25
 
         # Puts the page content into html format
         page = BeautifulSoup(result.content, 'html.parser')
-        num_results = page.find('h2', class_='figure')
+        header = page.find_all('h2', class_='figure')
+        num = header[0].text.strip().strip("(").strip(")").split()[0]
+        print(num)
         # find number of pages to search
-        num_jobs = num_results.text.strip().strip("(").strip(")").split()
-        self.pages = ceil(int(num_jobs[0]) / results_per_page)
-        self.runs = ceil(self.pages / 10)
-        return self.pages
+        num_jobs = num
+        self.pages = ceil(int(num) / results_per_page)
+        self.runs.append(ceil(self.pages / 10))
+        self.url_list.append(self.url)
 
     # scrapes job posting data and inserts into  a list of dictionaries
     def setscaper(self):
-        for s in range(0, self.runs):
-            x = 0
-            num = 10
-            if x == 0:
-                url = self.url + "&stpage=1&page=10"
-            else:
-                url = self.url + "&stpage=" + str(
-                    num) + '&page=' + str(num + 10)
+        for num in range(0, len(self.kwords)):
+            url_num = 0
 
-            response = requests.get(url)
-            page = BeautifulSoup(response.content, 'html.parser')
-            results = page.find(id="ResultsContainer")
-            # seperates individual job postings by class
-            job_elem = results.find_all('section', class_="card-content")
+            for s in range(0, self.runs[url_num]):
+                x = 0
+                num = 10
+                if x == 0:
+                    url = self.url_list[url_num] + "&stpage=1&page=10"
+                else:
+                    url = self.url[url_num] + "&stpage=" + str(
+                        num) + '&page=' + str(num + 10)
 
-            for job in job_elem:
-                i = 0
+                response = requests.get(url)
+                page = BeautifulSoup(response.content, 'html.parser')
+                results = page.find(id="ResultsContainer")
+                # seperates individual job postings by class
+                job_elem = results.find_all('section', class_="card-content")
 
-                title_elem = job.find('h2', class_='title')
-                company_elem = job.find('span', class_='name')
-                location_elem = job.find('div', class_='location')
-                date_elem = job.find('time')
+                for job in job_elem:
+                    i = 0
 
-                # remove invalid entries
-                if None in (title_elem, company_elem, location_elem, date_elem):
-                    continue
+                    title_elem = job.find('h2', class_='title')
+                    company_elem = job.find('span', class_='name')
+                    location_elem = job.find('div', class_='location')
+                    date_elem = job.find('time')
 
-                posting = {
-                    'title': title_elem.text.strip(),
-                    'company': company_elem.text.strip(),
-                    'location': location_elem.text.strip(),
-                    'date': date_elem.text.strip()
-                }
+                    # remove invalid entries
+                    if None in (title_elem, company_elem, location_elem, date_elem):
+                        continue
 
-                self.posting_list.append(posting)
-                i += 1
+                    posting = {
+                        'title': title_elem.text.strip(),
+                        'company': company_elem.text.strip(),
+                        'location': location_elem.text.strip(),
+                        'date': date_elem.text.strip()
+                    }
 
-        # filters by chosen dictionary fields
-
-    def filterbyfield(self, **filters):
-        filteredlist = []
-        self.fieldvalues = filters.values()
-        for post in self.posting_list:
-            if len(filters) == 0:
-                filteredlist.append(post)
-            else:
-                entry = []
-                for f in filters.values():
-                    entry.append(post[f])
-                filteredlist.append(entry)
-
-        self.outputlist = filteredlist
-        print(filteredlist)
-        return filteredlist
+                    self.posting_list.append(posting)
+                    i += 1
+            url_num += 0
 
     # filters by specific keywords in the posting
     def filterbykeywords(self, **filters):
+
         filteredlist = []
         # reset header values
         self.fieldvalues = None
@@ -110,16 +104,47 @@ class MonsterScraper:
                 filteredlist.append(post)
 
         self.outputlist = filteredlist
-        return filteredlist
+        print(self.outputlist)
+
+        # filters by chosen dictionary fields
+
+    def filterbyfield(self, **filters):
+        filteredlist = []
+        self.fieldvalues = filters.values()
+
+        if len(self.outputlist) <= 1:
+            for post in self.posting_list:
+                if len(filters) == 0:
+                    filteredlist.append(post)
+                else:
+                    entry = []
+                    for f in filters.values():
+                        entry.append(post[f])
+                        filteredlist.append(entry)
+
+                    self.outputlist = filteredlist
+            print(self.outputlist)
+
+        else:
+            for post in self.outputlist:
+                if len(filters) == 0:
+                    filteredlist.append(post)
+                else:
+                    entry = []
+                    for f in filters.values():
+                        entry.append(post[f])
+                    filteredlist.append(entry)
+            self.outputlist = filteredlist
+            print(self.outputlist)
 
     def tofile(self, file):
         with open(file, "w+", newline='') as csvfile:
 
-            if self.fieldvalues is None:
+            if self.fieldvalues is None or self.outputlist is None:
                 writer = csv.DictWriter(csvfile, fieldnames=["title", "company", "location", "date"])
                 writer.writeheader()
 
-                for data in self.outputlist:
+                for data in self.posting_list:
                     writer.writerow(data)
             else:
                 writer = csv.writer(csvfile)
@@ -127,3 +152,6 @@ class MonsterScraper:
 
                 for data in self.outputlist:
                     writer.writerow(data)
+
+    def getpostings(self):
+        return self.posting_list
