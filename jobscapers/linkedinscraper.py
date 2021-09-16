@@ -16,11 +16,11 @@ companylist = []
 # driver.get('https://www.linkedin.com/')
 #
 # username = driver.find_element_by_name("session_key")
-# username.send_keys('enorris@alumni.shawnigan.ca')
+# username.send_keys('')
 # sleep(random.uniform(10, 20))
 #
 # password = driver.find_element_by_name("session_password")
-# password.send_keys('123cabbage')
+# password.send_keys()
 # sleep(random.uniform(1, 2.7))
 #
 # sign_in_button = driver.find_element_by_class_name('sign-in-form__submit-button')
